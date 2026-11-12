@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="GameSystem.CLI/GameSystem.CLI.csproj" />
+  <Project Path="GameSystem.Core/GameSystem.Core.csproj" />
+  <Project Path="GameSystem.Infra/GameSystem.Infra.csproj" />
+  <Project Path="GameSystem.ConsoleApp/GameSystem.ConsoleApp.csproj" />
+  <Project Path="GameSystem.FileManager/GameSystem.FileManager.csproj" />
+  <Project Path="GameSystem.Tests/GameSystem.Tests.csproj" />
+</Solution>
