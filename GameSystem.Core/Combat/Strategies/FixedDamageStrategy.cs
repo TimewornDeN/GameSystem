@@ -16,4 +16,7 @@ public sealed class FixedDamageStrategy(int power, bool ignoresArmor = false) : 
     /// </remarks>
     public int Compute(Character actor, Character target)
         => IgnoresArmor ? Power + target.Armor : Power;
+
+    /// <inheritdoc />
+    public int ComputeRaw(Character actor, Character target) => Power;
 }

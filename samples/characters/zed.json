@@ -1,0 +1,8 @@
+{
+  "classId": "mage",
+  "name": "Zed",
+  "item": { "name": "Storm Cape", "resistBonus": 20, "speedBonus": 25 },
+  "abilities": [
+    { "id": "lightning-bolt", "description": "Lightning Bolt", "power": 30, "ignoresArmor": true }
+  ]
+}

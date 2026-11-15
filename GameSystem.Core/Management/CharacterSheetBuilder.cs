@@ -24,7 +24,7 @@ public static class CharacterSheetBuilder
             : $"Class: {character.ClassId} | Element: {remoteInfo.Element} | Weapon type: {remoteInfo.WeaponType} | Rarity: {remoteInfo.Rarity}\u2605";
         heading.AddChild(new Paragraph(classLine));
 
-        heading.AddChild(new Paragraph($"HP: {character.Health}/{character.MaxHealth} | Armor: {character.Armor} | Attack: {character.AttackPower}"));
+        heading.AddChild(new Paragraph($"HP: {character.Health}/{character.MaxHealth} | Armor: {character.Armor} | Attack: {character.AttackPower} | Resist: {character.Resist}% | Speed: {character.Speed}"));
 
         heading.AddChild(new Paragraph(
             string.IsNullOrWhiteSpace(remoteInfo?.Description)

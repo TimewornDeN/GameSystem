@@ -9,6 +9,8 @@ public sealed class UseAbilityAction(Character actor, Character target, string? 
     private readonly Character _target = target ?? throw new ArgumentNullException(nameof(target));
     private readonly string? _abilityId = abilityId;
 
+    public string Name => "ability";
+
     public void Execute()
     {
         if (string.IsNullOrWhiteSpace(_abilityId))

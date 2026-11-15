@@ -13,7 +13,9 @@ public static class GameStateMapper
             Name = i.Name,
             HealthBonus = i.HealthBonus,
             ArmorBonus = i.ArmorBonus,
-            AttackBonus = i.AttackBonus
+            AttackBonus = i.AttackBonus,
+            ResistBonus = i.ResistBonus,
+            SpeedBonus = i.SpeedBonus
         })],
         Abilities = [.. model.Abilities.Select(a => new AbilityDto
         {
@@ -33,7 +35,7 @@ public static class GameStateMapper
     };
 
     public static GameStateModel ToModel(GameStateDto dto) => new(
-        Items: [.. dto.Items.Select(i => new ItemModel(i.Name, i.HealthBonus, i.ArmorBonus, i.AttackBonus))],
+        Items: [.. dto.Items.Select(i => new ItemModel(i.Name, i.HealthBonus, i.ArmorBonus, i.AttackBonus, i.ResistBonus, i.SpeedBonus))],
         Abilities: [.. dto.Abilities.Select(a => new AbilityModel(a.Id, a.Description, a.Power, a.IgnoresArmor))],
         Characters: [.. dto.Characters.Select(c => new CharacterStateModel(c.ClassId, c.Name, c.Health, c.EquippedItemName, [.. c.AbilityIds]))]
     );

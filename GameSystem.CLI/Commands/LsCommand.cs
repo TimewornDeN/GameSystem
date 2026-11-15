@@ -62,7 +62,7 @@ public sealed class LsCommand(GameWorld world, IDisplayer displayer, IRenderable
         {
             string item = c.EquippedItem?.Name ?? "none";
             string abilities = string.Join(", ", c.Abilities.Select(a => a.Id));
-            displayer.Show($"- [{c.Name}] ({c.ClassId}) HP: {c.Health}/{c.MaxHealth} | Armor: {c.Armor} | Attack: {c.AttackPower} | Item: {item} | Abilities: {abilities}");
+            displayer.Show($"- [{c.Name}] ({c.ClassId}) HP: {c.Health}/{c.MaxHealth} | Armor: {c.Armor} | Attack: {c.AttackPower} | Resist: {c.Resist}% | Speed: {c.Speed} | Item: {item} | Abilities: {abilities}");
         }
     }
 
@@ -82,7 +82,7 @@ public sealed class LsCommand(GameWorld world, IDisplayer displayer, IRenderable
 
         foreach (var item in query)
         {
-            displayer.Show($"- [{item.Name}] +HP {item.HealthBonus} / +Armor {item.ArmorBonus} / +Attack {item.AttackBonus}");
+            displayer.Show($"- [{item.Name}] +HP {item.HealthBonus} / +Armor {item.ArmorBonus} / +Attack {item.AttackBonus} / +Resist {item.ResistBonus}% / +Speed {item.SpeedBonus}");
         }
     }
 

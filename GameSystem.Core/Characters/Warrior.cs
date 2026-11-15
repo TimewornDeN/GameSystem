@@ -14,7 +14,11 @@ public class Warrior(string name, ICombatLogger logger)
 {
     public override string ClassId => "warrior";
 
-    /// <summary>Heavy Strike: deals double the warrior's current attack power.</summary>
+    /// <summary>Heavy Strike: deals double the warrior's current attack power and breaks the target's armor for two turns.</summary>
     protected override Ability CreateDefaultAbility()
-        => new("heavy-strike", "Heavy Strike", new AttackScalingDamageStrategy(multiplier: 2));
+        => new(
+            "heavy-strike",
+            "Heavy Strike",
+            new AttackScalingDamageStrategy(multiplier: 2),
+            effect: new StatusEffect("Armor Break", StatKind.Armor, -3, Turns: 2));
 }

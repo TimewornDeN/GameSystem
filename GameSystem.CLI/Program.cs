@@ -13,6 +13,8 @@ IInputReader input = new ConsoleInputReader();
 ICombatLogger logger = new ConsoleCombatLogger();
 IGameStateRepository states = new JsonGameStateRepository(
     Path.Combine(Directory.GetCurrentDirectory(), "saves"));
+ICharacterProfileSource profiles = new JsonCharacterProfileSource(
+    Path.Combine(Directory.GetCurrentDirectory(), "characters"));
 IGameResultRepository results = new JsonGameResultRepository(
     Path.Combine(Directory.GetCurrentDirectory(), "results", "game-results.json"));
 
@@ -20,7 +22,7 @@ var httpClient = new HttpClient { BaseAddress = new Uri("https://genshin.jmp.blu
 IGenshinApiClient apiClient = new HttpGenshinApiClient(httpClient);
 
 // The facade, already plugged with the information, transformative and infrastructure strategies.
-Cli cli = CliFactory.Create(displayer, input, logger, states, results, apiClient);
+Cli cli = CliFactory.Create(displayer, input, logger, states, results, apiClient, profiles: profiles);
 
 displayer.Show("--- GameSystem CLI Started. Type 'help' for commands, 'exit' to quit. ---", DisplayKind.Title);
 

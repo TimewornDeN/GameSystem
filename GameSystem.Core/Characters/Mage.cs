@@ -14,7 +14,12 @@ public class Mage(string name, ICombatLogger logger)
 {
     public override string ClassId => "mage";
 
-    /// <summary>Fireball: deals fixed damage that fully ignores the target's armor.</summary>
+    /// <summary>Fireball: deals fixed damage that ignores armor and 20% of resist, and lowers the target's resist for two turns.</summary>
     protected override Ability CreateDefaultAbility()
-        => new("fireball", "Fireball", new FixedDamageStrategy(35, ignoresArmor: true));
+        => new(
+            "fireball",
+            "Fireball",
+            new FixedDamageStrategy(35, ignoresArmor: true),
+            effect: new StatusEffect("Scorched", StatKind.Resist, -10, Turns: 2),
+            resistPenetration: 20);
 }

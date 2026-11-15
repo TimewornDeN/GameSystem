@@ -7,5 +7,8 @@ namespace GameSystem.Core.Combat.Actions;
 /// </summary>
 public interface ICombatAction
 {
+    /// <summary>Short name of the move for the battle history ("attack", "heal", "defend", "ability").</summary>
+    string Name => GetType().Name.Replace("Action", string.Empty, StringComparison.Ordinal).ToLowerInvariant();
+
     void Execute();
 }

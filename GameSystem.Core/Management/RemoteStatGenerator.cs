@@ -24,7 +24,11 @@ public static class RemoteStatGenerator
         int armorBonus = random.Next(min, max + 1) / 3;
         int attackBonus = random.Next(min, max + 1);
 
-        return new Item(new ItemModel($"{rarity}\u2605 Potential", healthBonus, armorBonus, attackBonus));
+        // Resist and speed are deterministic (no extra random rolls), so the roll sequence above stays reproducible.
+        int resistBonus = rarity >= 5 ? 10 : 5;
+        int speedBonus = rarity >= 5 ? 10 : 0;
+
+        return new Item(new ItemModel($"{rarity}\u2605 Potential", healthBonus, armorBonus, attackBonus, resistBonus, speedBonus));
     }
 
     /// <summary>

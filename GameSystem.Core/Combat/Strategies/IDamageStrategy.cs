@@ -14,4 +14,10 @@ public interface IDamageStrategy
 
     /// <summary>Computes raw damage before the target's own armor mitigation is applied.</summary>
     int Compute(Character actor, Character target);
+
+    /// <summary>
+    /// The damage before ANY defence, without the armor pre-compensation of <see cref="Compute"/>.
+    /// The damage formula (<see cref="DamageCalculator"/>) uses this value together with the <see cref="IgnoresArmor"/> flag.
+    /// </summary>
+    int ComputeRaw(Character actor, Character target) => Compute(actor, target);
 }

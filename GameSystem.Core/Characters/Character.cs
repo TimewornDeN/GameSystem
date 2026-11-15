@@ -24,6 +24,15 @@ public abstract class Character
     /// <summary> Gets the base attack damage power. </summary>
     public int AttackPower { get; protected set; }
 
+    /// <summary> Speed of a character without any bonuses; the turn order is based on it. </summary>
+    public const int BaseSpeed = 100;
+
+    /// <summary> Percentage (0-75) of every hit that is ignored after the armor was subtracted. </summary>
+    public int Resist { get; private set; }
+
+    /// <summary> Gets the base speed (including the equipped item, without buffs). </summary>
+    public int Speed { get; private set; } = BaseSpeed;
+
     /// <summary> Gets the currently equipped item, if any. </summary>
     public Item? EquippedItem { get; private set; }
 
@@ -40,6 +49,24 @@ public abstract class Character
     protected readonly ICombatLogger Logger;
 
     private readonly List<Ability> _abilities = [];
+    private readonly List<StatusEffect> _effects = [];
+
+    /// <summary> Buffs and debuffs that are active right now. </summary>
+    public IReadOnlyList<StatusEffect> ActiveEffects => _effects;
+
+    /// <summary> Attack power with buffs and debuffs. This is what attacks and attack-scaling abilities use. </summary>
+    public int EffectiveAttack => Math.Max(1, AttackPower + EffectBonus(StatKind.Attack));
+
+    /// <summary> Armor with buffs and debuffs, doubled while the character is defending. </summary>
+    public int EffectiveArmor => Math.Max(0, Armor + EffectBonus(StatKind.Armor)) * (IsDefending ? 2 : 1);
+
+    /// <summary> Resist with buffs and debuffs, kept inside the allowed range. </summary>
+    public int EffectiveResist => Math.Clamp(Resist + EffectBonus(StatKind.Resist), 0, DamageCalculator.MaxResist);
+
+    /// <summary> Speed with buffs and debuffs (never below 1). </summary>
+    public int EffectiveSpeed => Math.Max(1, Speed + EffectBonus(StatKind.Speed));
+
+    private int EffectBonus(StatKind stat) => _effects.Where(e => e.Stat == stat).Sum(e => e.Amount);
 
     /// <summary> Every ability this character currently knows (innate plus learned). </summary>
     public IReadOnlyList<Ability> Abilities => _abilities;
@@ -91,12 +118,12 @@ public abstract class Character
     {
         ArgumentNullException.ThrowIfNull(target);
 
-        Logger.Log($"[{Name}] attacks [{target.Name}] with {AttackPower} power!", LogColor.White);
-        target.TakeDamage(AttackPower);
+        Logger.Log($"[{Name}] attacks [{target.Name}] with {EffectiveAttack} power!", LogColor.White);
+        target.TakeDamage(EffectiveAttack);
     }
 
     /// <summary>
-    /// Calculates net damage received after defense and armor reduction.
+    /// Receives a plain physical blow of the given strength (armor applies, nothing is ignored).
     /// </summary>
     /// <param name="damage">Raw incoming damage value.</param>
     public virtual void TakeDamage(int damage)
@@ -104,14 +131,64 @@ public abstract class Character
         if (damage < 0)
             throw new ArgumentException("Damage cannot be negative.", nameof(damage));
 
-        int effectiveArmor = IsDefending ? Armor * 2 : Armor;
-        int actualDamage = Math.Max(1, damage - effectiveArmor);
+        TakeHit(new Hit(damage));
+    }
+
+    /// <summary>
+    /// Receives a blow and loses health according to the damage formula of <see cref="DamageCalculator"/>:
+    /// flat armor first, then the percentage resist.
+    /// </summary>
+    public void TakeHit(Hit hit)
+    {
+        int armor = hit.IgnoresArmor ? 0 : EffectiveArmor;
+        int actualDamage = DamageCalculator.Resolve(hit, EffectiveArmor, EffectiveResist);
 
         Health = Math.Max(0, Health - actualDamage);
 
-        Logger.Log($"  -> [{Name}] takes {actualDamage} damage (Armor: {effectiveArmor}). Health left: {Health}/{MaxHealth}", LogColor.Red);
+        string resistNote = EffectiveResist > 0 ? $", Resist: {EffectiveResist}%" : string.Empty;
+        Logger.Log($"  -> [{Name}] takes {actualDamage} damage (Armor: {armor}{resistNote}). Health left: {Health}/{MaxHealth}", LogColor.Red);
         IsDefending = false;
     }
+
+    /// <summary>
+    /// Puts a buff or a debuff on the character. An effect with the same name is refreshed instead of stacked.
+    /// </summary>
+    public void AddEffect(StatusEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+
+        if (effect.Turns <= 0)
+            throw new ArgumentException("An effect must last at least one turn.", nameof(effect));
+
+        int index = _effects.FindIndex(e => e.Name.Equals(effect.Name, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+            _effects[index] = effect;
+        else
+            _effects.Add(effect);
+
+        Logger.Log($"  -> [{Name}] is affected by {effect}.", effect.IsDebuff ? LogColor.Magenta : LogColor.Cyan);
+    }
+
+    /// <summary>One turn passes: every effect has one turn less left and expired effects are removed.</summary>
+    public void TickEffects()
+    {
+        for (int i = _effects.Count - 1; i >= 0; i--)
+        {
+            var ticked = _effects[i].Tick();
+            if (ticked.Turns <= 0)
+            {
+                Logger.Log($"  -> '{ticked.Name}' wears off from [{Name}].", LogColor.Gray);
+                _effects.RemoveAt(i);
+            }
+            else
+            {
+                _effects[i] = ticked;
+            }
+        }
+    }
+
+    /// <summary>Removes all buffs and debuffs without narration (used when a new battle starts).</summary>
+    public void ClearEffects() => _effects.Clear();
 
     /// <summary>
     /// Raises defensive stance to double armor on the next incoming hit.
@@ -157,6 +234,8 @@ public abstract class Character
         MaxHealth -= EquippedItem.HealthBonus;
         Armor -= EquippedItem.ArmorBonus;
         AttackPower -= EquippedItem.AttackBonus;
+        Resist -= EquippedItem.ResistBonus;
+        Speed -= EquippedItem.SpeedBonus;
         Health = Math.Min(Health, MaxHealth);
         EquippedItem = null;
     }
@@ -169,6 +248,8 @@ public abstract class Character
         Health += item.HealthBonus;
         Armor += item.ArmorBonus;
         AttackPower += item.AttackBonus;
+        Resist += item.ResistBonus;
+        Speed += item.SpeedBonus;
     }
 
     /// <summary>Adds a custom ability to the character's known abilities.</summary>
@@ -196,7 +277,10 @@ public abstract class Character
             ?? throw new InvalidOperationException($"Character '{Name}' does not know ability '{abilityId}'.");
 
         Logger.Log($"\n[ABILITY] {Name} uses '{ability.Description}' on {target.Name}!", LogColor.Magenta);
-        target.TakeDamage(ability.ComputeDamage(this, target));
+        target.TakeHit(ability.CreateHit(this, target));
+
+        if (ability.Effect is { } effect && (ability.EffectOnSelf || target.Health > 0))
+            (ability.EffectOnSelf ? this : target).AddEffect(effect);
     }
 
     /// <summary>Directly sets current health, clamped to [0, MaxHealth]; used when restoring persisted state.</summary>
@@ -215,7 +299,8 @@ public abstract class Character
         Health,
         EquippedItem,
         [.. _abilities.Where(a => !a.Id.Equals(DefaultAbilityId, StringComparison.Ordinal))],
-        IsDefending);
+        IsDefending,
+        [.. _effects]);
 
     /// <summary>Rolls this character back to the state captured in <paramref name="memento"/>. Produces no narration.</summary>
     /// <exception cref="ArgumentException">The memento was taken from a different character.</exception>
@@ -236,6 +321,10 @@ public abstract class Character
         _abilities.AddRange(memento.LearnedAbilities);
 
         IsDefending = memento.IsDefending;
+
+        _effects.Clear();
+        if (memento.ActiveEffects is not null)
+            _effects.AddRange(memento.ActiveEffects);
         SetHealth(memento.Health); // After equipment, so MaxHealth is already final.
     }
 }

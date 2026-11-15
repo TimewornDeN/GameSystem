@@ -1,4 +1,5 @@
 using GameSystem.CLI.Battle;
+using GameSystem.CLI.Commands;
 using GameSystem.CLI.Interfaces;
 using GameSystem.CLI.Rendering;
 using GameSystem.CLI.Strategies;
@@ -25,7 +26,8 @@ public static class CliFactory
         GameWorld? world = null,
         ICommandParser? parser = null,
         ITurnStrategy? opponentStrategy = null,
-        Func<DateTime>? clock = null)
+        Func<DateTime>? clock = null,
+        ICharacterProfileSource? profiles = null)
     {
         world ??= new GameWorld();
         parser ??= new CommandParser();
@@ -39,11 +41,16 @@ public static class CliFactory
         cli.UseRenderer(new RosterRenderer(displayer));
         cli.UseRenderer(new GameResultsRenderer(displayer));
 
-        var battle = new BattleController(parser, displayer, input, opponentStrategy, results, clock);
+        // The same save command works in the main interface and inside a battle (the fighters live in the same world).
+        var saveCommand = new SaveCommand(world, states, displayer);
+        var battle = new BattleController(parser, displayer, input, opponentStrategy, results, clock, saveCommand);
 
         cli.UseStrategy(new InformationCommandStrategy(world, displayer, cli, results, cli));
         cli.UseStrategy(new TransformativeCommandStrategy(world, displayer, input, cli, logger, battle));
-        cli.UseStrategy(new InfrastructureCommandStrategy(world, states, displayer, logger, apiClient));
+        var infrastructure = new InfrastructureCommandStrategy(world, states, displayer, logger, apiClient);
+        if (profiles is not null)
+            infrastructure.RegisterCommand(new ImportCommand(world, profiles, displayer, logger));
+        cli.UseStrategy(infrastructure);
 
         return cli;
     }

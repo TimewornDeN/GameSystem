@@ -16,7 +16,8 @@ public sealed class BattleCommandStrategy : CommandStrategyBase
         BattleSession session,
         IDisplayer displayer,
         IRenderableDisplay display,
-        ICommandCatalog catalog)
+        ICommandCatalog catalog,
+        ICommand? saveCommand = null)
         : base("Battle")
     {
         RegisterCommand(new BattleActionCommand("attack", "Hits the opponent", session, displayer));
@@ -24,6 +25,9 @@ public sealed class BattleCommandStrategy : CommandStrategyBase
         RegisterCommand(new BattleActionCommand("defend", "Doubles your armor for the next hit", session, displayer));
         RegisterCommand(new BattleActionCommand("ability", "Uses an ability on the opponent: ability [id]", session, displayer));
         RegisterCommand(new BattleStatusCommand(session, display));
+        RegisterCommand(new HistoryCommand(session, displayer));
+        if (saveCommand is not null)
+            RegisterCommand(saveCommand);
         RegisterCommand(new SurrenderCommand(session, displayer));
         RegisterCommand(new HelpCommand(catalog, displayer, "Battle commands:"));
     }

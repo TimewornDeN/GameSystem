@@ -7,6 +7,8 @@ public sealed class ItemDto
     public int HealthBonus { get; set; }
     public int ArmorBonus { get; set; }
     public int AttackBonus { get; set; }
+    public int ResistBonus { get; set; }
+    public int SpeedBonus { get; set; }
 }
 
 /// <summary>Persistence DTO for a custom, fixed-power ability.</summary>

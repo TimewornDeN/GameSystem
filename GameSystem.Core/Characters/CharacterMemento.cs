@@ -13,10 +13,12 @@ namespace GameSystem.Core.Characters;
 /// <param name="EquippedItem">Equipped item, if any.</param>
 /// <param name="LearnedAbilities">Abilities learned on top of the innate one.</param>
 /// <param name="IsDefending">Whether the defensive stance was active.</param>
+/// <param name="ActiveEffects">Buffs and debuffs that were active (null means none).</param>
 public sealed record CharacterMemento(
     string ClassId,
     string Name,
     int Health,
     Item? EquippedItem,
     IReadOnlyList<Ability> LearnedAbilities,
-    bool IsDefending);
+    bool IsDefending,
+    IReadOnlyList<StatusEffect>? ActiveEffects = null);

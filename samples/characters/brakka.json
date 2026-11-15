@@ -1,0 +1,8 @@
+{
+  "classId": "warrior",
+  "name": "Brakka",
+  "item": { "name": "Iron Plate", "healthBonus": 30, "armorBonus": 6, "resistBonus": 10, "speedBonus": -10 },
+  "abilities": [
+    { "id": "shield-bash", "description": "Shield Bash", "power": 25 }
+  ]
+}

@@ -10,7 +10,7 @@ namespace GameSystem.CLI.Battle;
 
 /// <summary>
 /// The main loop of the game: shows the state, reads a command for the current fighter, executes it,
-/// repeats until somebody wins, then saves the result.
+/// repeats until somebody wins, then shows the history of the battle and saves the result.
 /// </summary>
 public sealed class BattleController(
     ICommandParser parser,
@@ -18,7 +18,8 @@ public sealed class BattleController(
     IInputReader input,
     ITurnStrategy opponentStrategy,
     IGameResultRepository results,
-    Func<DateTime> clock)
+    Func<DateTime> clock,
+    ICommand? saveCommand = null)
 {
     /// <summary>
     /// Plays the battle. Returns the saved result, or null when the input ended before the battle was over.
@@ -30,7 +31,7 @@ public sealed class BattleController(
 
         var cli = new Cli(parser, displayer);
         cli.UseRenderer(new BattleStatusRenderer(displayer));
-        cli.UseStrategy(new BattleCommandStrategy(session, displayer, cli, cli));
+        cli.UseStrategy(new BattleCommandStrategy(session, displayer, cli, cli, saveCommand));
 
         displayer.Show($"=== BATTLE: {session.First.Name} VS {session.Second.Name} ===", DisplayKind.Title);
         displayer.Info("Type 'help' to see the battle commands.");
@@ -82,6 +83,9 @@ public sealed class BattleController(
     private GameResult Finish(BattleSession session)
     {
         var result = session.ToResult(clock());
+
+        displayer.Show("--- Battle history ---", DisplayKind.Title);
+        displayer.Show(BattleHistoryFormatter.ToTable(session.History));
 
         displayer.Success($"WINNER: [{result.Winner}] with {result.WinnerHealth}/{result.WinnerMaxHealth} HP after {result.Rounds} round(s). [{result.Loser}] was defeated.");
 
