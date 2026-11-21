@@ -11,12 +11,12 @@ using GameSystem.Infra.WebApi;
 IDisplayer displayer = new ConsoleDisplayer();
 IInputReader input = new ConsoleInputReader();
 ICombatLogger logger = new ConsoleCombatLogger();
-IGameStateRepository states = new JsonGameStateRepository(
-    Path.Combine(Directory.GetCurrentDirectory(), "saves"));
+// Saves and results live in the per-user application data folder, not in whatever folder the program was started from.
+string dataRoot = AppDataLocations.Root();
+IGameStateRepository states = new JsonGameStateRepository(AppDataLocations.Saves(dataRoot));
 ICharacterProfileSource profiles = new JsonCharacterProfileSource(
     Path.Combine(Directory.GetCurrentDirectory(), "characters"));
-IGameResultRepository results = new JsonGameResultRepository(
-    Path.Combine(Directory.GetCurrentDirectory(), "results", "game-results.json"));
+IGameResultRepository results = new JsonGameResultRepository(AppDataLocations.Results(dataRoot));
 
 var httpClient = new HttpClient { BaseAddress = new Uri("https://genshin.jmp.blue/") };
 IGenshinApiClient apiClient = new HttpGenshinApiClient(httpClient);
@@ -25,6 +25,9 @@ IGenshinApiClient apiClient = new HttpGenshinApiClient(httpClient);
 Cli cli = CliFactory.Create(displayer, input, logger, states, results, apiClient, profiles: profiles);
 
 displayer.Show("--- GameSystem CLI Started. Type 'help' for commands, 'exit' to quit. ---", DisplayKind.Title);
+displayer.Info($"Saves and results are kept in: {dataRoot}");
+if (states.Latest() is { } lastSave)
+    displayer.Info($"Last save: '{lastSave}'. Type 'continue' to go on from it.");
 
 while (true)
 {

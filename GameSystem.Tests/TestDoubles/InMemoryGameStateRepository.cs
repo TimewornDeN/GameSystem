@@ -7,8 +7,13 @@ namespace GameSystem.Tests.TestDoubles;
 public sealed class InMemoryGameStateRepository : IGameStateRepository
 {
     private readonly Dictionary<string, GameStateModel> _store = new(StringComparer.OrdinalIgnoreCase);
+    private string? _latest;
 
-    public void Save(string name, GameStateModel state) => _store[name] = state;
+    public void Save(string name, GameStateModel state)
+    {
+        _store[name] = state;
+        _latest = name;
+    }
 
     public GameStateModel Load(string name)
         => _store.TryGetValue(name, out var state) ? state : throw new FileNotFoundException($"Saved game '{name}' not found.");
@@ -16,4 +21,6 @@ public sealed class InMemoryGameStateRepository : IGameStateRepository
     public bool Exists(string name) => _store.ContainsKey(name);
 
     public IReadOnlyList<string> List() => [.. _store.Keys.Order()];
+
+    public string? Latest() => _latest;
 }

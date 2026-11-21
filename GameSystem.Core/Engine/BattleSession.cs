@@ -42,6 +42,14 @@ public sealed class BattleSession
         _turn = StartTurn(1);
     }
 
+    private BattleSession(Character first, Character second, List<Turn> turns, int turnsPlayed)
+    {
+        _fighters = [first, second];
+        _turns.AddRange(turns);
+        _turn = _turns[^1];
+        TurnsPlayed = turnsPlayed;
+    }
+
     public Character First => _fighters[0];
 
     public Character Second => _fighters[1];
@@ -120,6 +128,87 @@ public sealed class BattleSession
             throw new InvalidOperationException("The battle is already finished.");
 
         _surrendered = CurrentActor;
+    }
+
+    /// <summary>
+    /// Captures everything that is needed to continue this battle later: whose turn it is, the order of the
+    /// current round and the whole history. The state of the fighters themselves is saved with the characters.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The battle is already finished, there is nothing to continue.</exception>
+    public BattleStateModel CaptureState(bool secondFighterIsAi)
+    {
+        if (IsFinished)
+            throw new InvalidOperationException("A finished battle cannot be saved.");
+
+        return new BattleStateModel(
+            First.Name,
+            Second.Name,
+            secondFighterIsAi,
+            Round,
+            TurnsPlayed,
+            [.. _turn.Order.Select(c => ReferenceEquals(c, First) ? 0 : 1)],
+            [.. History]);
+    }
+
+    /// <summary>
+    /// Continues a saved battle with the given (already restored) characters. Unlike the public constructors it
+    /// does not clear effects and does not start a new turn: the battle goes on exactly where it stopped.
+    /// </summary>
+    /// <exception cref="ArgumentException">The saved battle does not match the characters or is inconsistent.</exception>
+    public static BattleSession Restore(BattleStateModel state, IReadOnlyList<Character> characters)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(characters);
+
+        Character Find(string name) => characters.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"The saved battle refers to an unknown character '{name}'.", nameof(state));
+
+        var first = Find(state.FirstName);
+        var second = Find(state.SecondName);
+
+        if (ReferenceEquals(first, second))
+            throw new ArgumentException("A character cannot fight itself.", nameof(state));
+
+        if (first.Health <= 0 || second.Health <= 0)
+            throw new ArgumentException("Both fighters of a saved battle must be alive.", nameof(state));
+
+        if (state.Round < 1)
+            throw new ArgumentException("Rounds start at 1.", nameof(state));
+
+        if (state.TurnsPlayed != state.History.Count)
+            throw new ArgumentException("The number of played actions does not match the history.", nameof(state));
+
+        if (state.History.Any(e => e.Round < 1 || e.Round > state.Round))
+            throw new ArgumentException("The history refers to a round that does not exist.", nameof(state));
+
+        Character[] fighters = [first, second];
+
+        int IndexOf(string actor)
+            => actor.Equals(first.Name, StringComparison.OrdinalIgnoreCase) ? 0
+                : actor.Equals(second.Name, StringComparison.OrdinalIgnoreCase) ? 1
+                : throw new ArgumentException($"The history refers to an unknown actor '{actor}'.", nameof(state));
+
+        List<Turn> turns = [];
+
+        // Finished rounds: everybody has acted, so the order is simply who acted in the history.
+        for (int round = 1; round < state.Round; round++)
+        {
+            var entries = state.History.Where(e => e.Round == round).ToList();
+            if (entries.Count == 0)
+                throw new ArgumentException($"The history of round {round} is missing.", nameof(state));
+
+            turns.Add(Turn.Restore(round, fighters, [.. entries.Select(e => IndexOf(e.Actor))], entries));
+        }
+
+        // The round that is being played: its order was saved, because it cannot be recomputed.
+        var current = state.History.Where(e => e.Round == state.Round).ToList();
+        var currentTurn = Turn.Restore(state.Round, fighters, state.CurrentOrder, current);
+
+        if (currentTurn.IsComplete)
+            throw new ArgumentException("The saved round is already complete, so the battle could not be in progress.", nameof(state));
+
+        turns.Add(currentTurn);
+        return new BattleSession(first, second, turns, state.TurnsPlayed);
     }
 
     public GameResult ToResult(DateTime finishedAtUtc)

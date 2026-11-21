@@ -1,7 +1,6 @@
 using GameSystem.Core.Abstractions;
 using GameSystem.Core.Logging;
 using GameSystem.Core.Management;
-using GameSystem.Core.Models;
 
 namespace GameSystem.CLI.Commands;
 
@@ -18,27 +17,16 @@ public sealed class LoadCommand(GameWorld world, IGameStateRepository repository
             return;
         }
 
-        if (!repository.Exists(name))
-        {
-            displayer.Error($"Saved game '{name}' not found.");
+        if (!SavedGameLoader.TryLoad(name, world, repository, displayer, logger))
             return;
-        }
-
-        GameStateModel state;
-        try
-        {
-            state = repository.Load(name);
-        }
-        catch (InvalidDataException ex)
-        {
-            displayer.Error(ex.Message);
-            return;
-        }
-
-        // Build the whole restored world first, so a failure cannot leave the session half-replaced.
-        var restored = GameStateSnapshotter.Restore(state, logger);
-        world.ReplaceWith(restored);
 
         displayer.Success($"Game state '{name}' loaded.");
+
+        if (world.Battle is { } battle)
+        {
+            displayer.Info(
+                $"This save has a battle in progress ({battle.Session.First.Name} vs {battle.Session.Second.Name}, " +
+                $"round {battle.Session.Round}). Type 'continue {name}' to go on with it.");
+        }
     }
 }

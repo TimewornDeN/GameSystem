@@ -31,10 +31,10 @@ public class JsonGameStateRepository : IGameStateRepository
         ArgumentNullException.ThrowIfNull(state);
 
         string path = GetPath(name);
-        Directory.CreateDirectory(_directory);
 
+        // Written through a temporary file, so a crash in the middle never destroys the previous save.
         string json = JsonSerializer.Serialize(GameStateMapper.ToDto(state), Options);
-        File.WriteAllText(path, json);
+        AtomicFile.WriteAllText(path, json);
     }
 
     public GameStateModel Load(string name)
@@ -47,6 +47,11 @@ public class JsonGameStateRepository : IGameStateRepository
         {
             var dto = JsonSerializer.Deserialize<GameStateDto>(File.ReadAllText(path), Options)
                       ?? throw new InvalidDataException("File is empty.");
+
+            if (dto.Version > GameStateDto.CurrentVersion)
+                throw new InvalidDataException(
+                    $"Saved game '{name}' was written by a newer version of the game (file version {dto.Version}).");
+
             return GameStateMapper.ToModel(dto);
         }
         catch (Exception ex) when (ex is JsonException or ArgumentException)
@@ -65,6 +70,19 @@ public class JsonGameStateRepository : IGameStateRepository
         return [.. Directory.EnumerateFiles(_directory, "*.json")
             .Select(file => Path.GetFileNameWithoutExtension(file))
             .Order()];
+    }
+
+    public string? Latest()
+    {
+        if (!Directory.Exists(_directory))
+            return null;
+
+        return Directory.EnumerateFiles(_directory, "*.json")
+            .Select(file => (Name: Path.GetFileNameWithoutExtension(file), Written: File.GetLastWriteTimeUtc(file)))
+            .OrderByDescending(entry => entry.Written)
+            .ThenBy(entry => entry.Name, StringComparer.Ordinal)
+            .Select(entry => entry.Name)
+            .FirstOrDefault();
     }
 
     private string GetPath(string name)

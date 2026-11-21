@@ -9,4 +9,7 @@ public interface IGameStateRepository
     GameStateModel Load(string name);
     bool Exists(string name);
     IReadOnlyList<string> List();
+
+    /// <summary>Name of the most recently written save, or null when there are no saves at all.</summary>
+    string? Latest();
 }

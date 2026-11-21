@@ -26,11 +26,7 @@ public class JsonGameResultRepository : IGameResultRepository
         var all = Read();
         all.Add(result);
 
-        string? directory = Path.GetDirectoryName(Path.GetFullPath(_filePath));
-        if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
-
-        File.WriteAllText(_filePath, JsonSerializer.Serialize(all, Options));
+        AtomicFile.WriteAllText(_filePath, JsonSerializer.Serialize(all, Options));
     }
 
     public IReadOnlyList<GameResult> GetAll() => Read();

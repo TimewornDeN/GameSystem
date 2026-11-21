@@ -107,6 +107,40 @@ public sealed class Turn
         return entry;
     }
 
+    /// <summary>
+    /// Rebuilds a turn that was saved half-way: the order of actions is taken as it was (it cannot be recomputed,
+    /// because the effects have already ticked), the entries are what has happened so far and the position follows from them.
+    /// </summary>
+    /// <param name="order">Indices (0 or 1) into <paramref name="fighters"/>, one per action of the turn.</param>
+    /// <exception cref="ArgumentException">The saved data is inconsistent.</exception>
+    public static Turn Restore(int number, IReadOnlyList<Character> fighters, IReadOnlyList<int> order, IEnumerable<TurnEntry> entries)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+        ArgumentNullException.ThrowIfNull(entries);
+
+        var turn = new Turn(number, fighters);
+
+        if (order.Count == 0)
+            throw new ArgumentException("A turn has at least one action.", nameof(order));
+
+        foreach (int index in order)
+        {
+            if (index is < 0 or > 1)
+                throw new ArgumentException($"Unknown fighter index {index} in the order of actions.", nameof(order));
+
+            turn._order.Add(turn._fighters[index]);
+        }
+
+        turn._entries.AddRange(entries);
+
+        if (turn._entries.Count > turn._order.Count)
+            throw new ArgumentException($"Turn {number} has more entries than actions.", nameof(entries));
+
+        turn.Position = turn._entries.Count;
+        turn._started = true;
+        return turn;
+    }
+
     private Character OpponentOf(Character actor)
         => ReferenceEquals(actor, _fighters[0]) ? _fighters[1] : _fighters[0];
 

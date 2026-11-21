@@ -3,7 +3,10 @@ using GameSystem.Core.Management;
 
 namespace GameSystem.CLI.Commands;
 
-/// <summary>save &lt;name&gt; — saves the whole game world (catalogs and characters).</summary>
+/// <summary>
+/// save &lt;name&gt; — saves the whole game world: catalogs, characters (with their effects and stance), the
+/// narrative data of remote characters and, when there is one, the battle in progress.
+/// </summary>
 public sealed class SaveCommand(GameWorld world, IGameStateRepository repository, IDisplayer displayer)
     : CommandBase("save", "Saves the current game state: save <n>")
 {
@@ -17,9 +20,12 @@ public sealed class SaveCommand(GameWorld world, IGameStateRepository repository
         }
 
         // Every character produces its own memento; the snapshotter assembles the persistable world state.
-        var state = GameStateSnapshotter.Capture(world.Items, world.Abilities, world.Characters);
+        var state = GameStateSnapshotter.Capture(world.Items, world.Abilities, world.Characters, world.Battle, world.RemoteInfo);
 
         repository.Save(name, state);
         displayer.Success($"Game state saved as '{name}'.");
+
+        if (state.Battle is not null)
+            displayer.Info($"The battle in progress (round {state.Battle.Round}) is part of this save: 'continue {name}' resumes it.");
     }
 }

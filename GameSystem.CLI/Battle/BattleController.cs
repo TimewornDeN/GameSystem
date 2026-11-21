@@ -3,6 +3,7 @@ using GameSystem.CLI.Rendering;
 using GameSystem.Core.Abstractions;
 using GameSystem.Core.Combat.Actions;
 using GameSystem.Core.Engine;
+using GameSystem.Core.Management;
 using GameSystem.Core.Models;
 using GameSystem.Core.Rendering;
 
@@ -19,7 +20,8 @@ public sealed class BattleController(
     ITurnStrategy opponentStrategy,
     IGameResultRepository results,
     Func<DateTime> clock,
-    ICommand? saveCommand = null)
+    ICommand? saveCommand = null,
+    GameWorld? world = null)
 {
     /// <summary>
     /// Plays the battle. Returns the saved result, or null when the input ended before the battle was over.
@@ -28,6 +30,10 @@ public sealed class BattleController(
     public GameResult? Run(BattleSession session, bool secondFighterIsAi)
     {
         ArgumentNullException.ThrowIfNull(session);
+
+        // From now on 'save' stores this battle too; a battle that was waiting after 'load' is replaced by this one.
+        if (world is not null)
+            world.Battle = new ResumableBattle(session, secondFighterIsAi);
 
         var cli = new Cli(parser, displayer);
         cli.UseRenderer(new BattleStatusRenderer(displayer));
@@ -51,6 +57,7 @@ public sealed class BattleController(
                 if (line is null)
                 {
                     displayer.Warning("Input ended. The battle was abandoned and no result was saved.");
+                    if (world is not null) world.Battle = null;
                     return null;
                 }
 
@@ -83,6 +90,9 @@ public sealed class BattleController(
     private GameResult Finish(BattleSession session)
     {
         var result = session.ToResult(clock());
+
+        // A finished battle has nothing left to continue.
+        if (world is not null) world.Battle = null;
 
         displayer.Show("--- Battle history ---", DisplayKind.Title);
         displayer.Show(BattleHistoryFormatter.ToTable(session.History));

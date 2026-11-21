@@ -43,11 +43,12 @@ public static class CliFactory
 
         // The same save command works in the main interface and inside a battle (the fighters live in the same world).
         var saveCommand = new SaveCommand(world, states, displayer);
-        var battle = new BattleController(parser, displayer, input, opponentStrategy, results, clock, saveCommand);
+        var battle = new BattleController(parser, displayer, input, opponentStrategy, results, clock, saveCommand, world);
 
         cli.UseStrategy(new InformationCommandStrategy(world, displayer, cli, results, cli));
         cli.UseStrategy(new TransformativeCommandStrategy(world, displayer, input, cli, logger, battle));
         var infrastructure = new InfrastructureCommandStrategy(world, states, displayer, logger, apiClient);
+        infrastructure.RegisterCommand(new ContinueCommand(world, states, displayer, logger, battle));
         if (profiles is not null)
             infrastructure.RegisterCommand(new ImportCommand(world, profiles, displayer, logger));
         cli.UseStrategy(infrastructure);

@@ -1,12 +1,18 @@
 using GameSystem.Core.Characters;
 using GameSystem.Core.Combat;
+using GameSystem.Core.Engine;
 using GameSystem.Core.Logging;
 using GameSystem.Core.Models;
 
 namespace GameSystem.Core.Management;
 
 /// <summary>The live objects rebuilt from a saved <see cref="GameStateModel"/>.</summary>
-public sealed record RestoredWorld(List<Item> Items, List<Ability> Abilities, List<Character> Characters);
+public sealed record RestoredWorld(
+    List<Item> Items,
+    List<Ability> Abilities,
+    List<Character> Characters,
+    ResumableBattle? Battle = null,
+    Dictionary<string, RemoteCharacterInfo>? RemoteInfo = null);
 
 /// <summary>
 /// MEMENTO (caretaker side, whole world). Turns the live game world into a persistable
@@ -18,16 +24,38 @@ public static class GameStateSnapshotter
     public static GameStateModel Capture(
         IEnumerable<Item> items,
         IEnumerable<Ability> abilities,
-        IEnumerable<Character> characters)
+        IEnumerable<Character> characters,
+        ResumableBattle? battle = null,
+        IReadOnlyDictionary<string, RemoteCharacterInfo>? remoteInfo = null)
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(characters);
 
+        var roster = characters.ToList();
+
+        // Narrative data is kept only for characters that are really in the roster.
+        Dictionary<string, RemoteCharacterInfo> remote = new(StringComparer.OrdinalIgnoreCase);
+        if (remoteInfo is not null)
+        {
+            foreach (var character in roster)
+            {
+                if (remoteInfo.TryGetValue(character.Name, out var info))
+                    remote[character.Name] = info;
+            }
+        }
+
+        // A finished battle has nothing to continue: only a battle in progress is part of the state.
+        BattleStateModel? battleState = battle is { Session.IsFinished: false }
+            ? battle.Session.CaptureState(battle.SecondFighterIsAi)
+            : null;
+
         return new GameStateModel(
             Items: [.. items.Select(i => i.Model)],
             Abilities: [.. abilities.Select(a => a.ToModel())],
-            Characters: [.. characters.Select(ToStateModel)]);
+            Characters: [.. roster.Select(ToStateModel)],
+            Battle: battleState,
+            RemoteInfo: remote.Count > 0 ? remote : null);
     }
 
     /// <summary>
@@ -63,12 +91,27 @@ public static class GameStateSnapshotter
             }
 
             character.Restore(new CharacterMemento(
-                character.ClassId, character.Name, saved.Health, equipped, learned, IsDefending: false));
+                character.ClassId, character.Name, saved.Health, equipped, learned, saved.IsDefending, saved.Effects));
 
             characters.Add(character);
         }
 
-        return new RestoredWorld(items, abilities, characters);
+        // The battle is rebuilt from the characters that were just restored, so both share the same live objects.
+        ResumableBattle? battle = state.Battle is null
+            ? null
+            : new ResumableBattle(BattleSession.Restore(state.Battle, characters), state.Battle.SecondFighterIsAi);
+
+        Dictionary<string, RemoteCharacterInfo> remote = new(StringComparer.OrdinalIgnoreCase);
+        if (state.RemoteInfo is not null)
+        {
+            foreach (var (name, info) in state.RemoteInfo)
+            {
+                if (characters.Any(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    remote[name] = info;
+            }
+        }
+
+        return new RestoredWorld(items, abilities, characters, battle, remote);
     }
 
     private static CharacterStateModel ToStateModel(Character character)
@@ -80,6 +123,8 @@ public static class GameStateSnapshotter
             memento.Name,
             memento.Health,
             memento.EquippedItem?.Name,
-            [.. memento.LearnedAbilities.Select(a => a.Id)]);
+            [.. memento.LearnedAbilities.Select(a => a.Id)],
+            memento.IsDefending,
+            memento.ActiveEffects is { Count: > 0 } effects ? effects.ToList() : null);
     }
 }
