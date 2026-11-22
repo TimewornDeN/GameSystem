@@ -4,5 +4,7 @@
   <Project Path="GameSystem.Infra/GameSystem.Infra.csproj" />
   <Project Path="GameSystem.ConsoleApp/GameSystem.ConsoleApp.csproj" />
   <Project Path="GameSystem.FileManager/GameSystem.FileManager.csproj" />
+  <Project Path="GameSystem.Presentation/GameSystem.Presentation.csproj" />
+  <Project Path="GameSystem.Gui/GameSystem.Gui.csproj" />
   <Project Path="GameSystem.Tests/GameSystem.Tests.csproj" />
 </Solution>

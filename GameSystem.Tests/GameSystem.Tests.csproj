@@ -25,6 +25,7 @@
     <ProjectReference Include="..\GameSystem.Core\GameSystem.Core.csproj" />
     <ProjectReference Include="..\GameSystem.Infra\GameSystem.Infra.csproj" />
     <ProjectReference Include="..\GameSystem.CLI\GameSystem.CLI.csproj" />
+    <ProjectReference Include="..\GameSystem.Presentation\GameSystem.Presentation.csproj" />
     <ProjectReference Include="..\GameSystem.FileManager\GameSystem.FileManager.csproj" />
   </ItemGroup>
 

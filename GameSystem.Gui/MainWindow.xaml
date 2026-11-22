@@ -1,0 +1,247 @@
+<Window x:Class="GameSystem.Gui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:GameSystem.Gui"
+        xmlns:pc="clr-namespace:GameSystem.Presentation.Console;assembly=GameSystem.Presentation"
+        xmlns:cat="clr-namespace:GameSystem.Presentation.Catalog;assembly=GameSystem.Presentation"
+        Title="GameSystem" Width="1100" Height="720" MinWidth="820" MinHeight="520"
+        Background="#1B1B26" FontFamily="Segoe UI" FontSize="13">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <local:BytesToImageConverter x:Key="BytesToImage" />
+
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinWidth" Value="64" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#9A9AB8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,10,0,6" />
+        </Style>
+
+        <!-- One line of the game output: the colour depends on the style of the line. -->
+        <DataTemplate DataType="{x:Type pc:ConsoleLine}">
+            <TextBlock Text="{Binding Text}" FontFamily="Consolas" FontSize="14" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="#D8D8E0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Style}" Value="Title">
+                                <Setter Property="Foreground" Value="#C792EA" />
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Info">
+                                <Setter Property="Foreground" Value="#5CC8E0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Success">
+                                <Setter Property="Foreground" Value="#7FD36B" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Warning">
+                                <Setter Property="Foreground" Value="#F0C050" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Error">
+                                <Setter Property="Foreground" Value="#FF6B6B" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Echo">
+                                <Setter Property="Foreground" Value="#8EA2FF" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Damage">
+                                <Setter Property="Foreground" Value="#F07178" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Heal">
+                                <Setter Property="Foreground" Value="#7FD36B" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Buff">
+                                <Setter Property="Foreground" Value="#5CC8E0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Magic">
+                                <Setter Property="Foreground" Value="#C792EA" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Dim">
+                                <Setter Property="Foreground" Value="#7C7C90" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Style}" Value="Gold">
+                                <Setter Property="Foreground" Value="#E6B450" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+
+        <!-- One card of the catalog: portrait, name, short info from the server, health and stats. -->
+        <DataTemplate DataType="{x:Type cat:CharacterCardViewModel}">
+            <Border Width="330" Margin="8" Padding="12" CornerRadius="8"
+                    Background="#2A2A3C" BorderBrush="#3F3F5A" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Width="88" Height="88" VerticalAlignment="Top" Margin="0,0,12,0">
+                        <Ellipse Fill="#4B4B6B" />
+                        <TextBlock Text="{Binding Card.Initial}" FontSize="38" FontWeight="Bold"
+                                   Foreground="#C8C8E0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Ellipse>
+                            <Ellipse.Fill>
+                                <ImageBrush Stretch="UniformToFill"
+                                            ImageSource="{Binding PortraitBytes, Converter={StaticResource BytesToImage}}" />
+                            </Ellipse.Fill>
+                        </Ellipse>
+                    </Grid>
+
+                    <StackPanel Grid.Column="1">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="{Binding Card.Name}" FontSize="17" FontWeight="Bold" Foreground="#F0F0FA"
+                                       DockPanel.Dock="Left" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Card.Stars}" Foreground="#E6B450" DockPanel.Dock="Right" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding Card.ClassText}" Foreground="#9A9AB8" />
+                        <TextBlock Text="{Binding Card.Title}" Foreground="#C792EA" FontStyle="Italic" />
+                        <TextBlock Text="{Binding Card.Subtitle}" Foreground="#5CC8E0" />
+                        <TextBlock Text="{Binding Card.Description}" Foreground="#B8B8CC" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                        <ProgressBar Minimum="0" Maximum="100" Height="8" Margin="0,8,0,2"
+                                     Value="{Binding Card.HealthPercent, Mode=OneWay}"
+                                     Foreground="#7FD36B" Background="#15151F" BorderThickness="0" />
+                        <TextBlock Text="{Binding Card.HealthText}" Foreground="#D8D8E0" />
+                        <TextBlock Text="{Binding Card.StatsText}" Foreground="#9A9AB8" FontFamily="Consolas" />
+                        <TextBlock Foreground="#B8B8CC">
+                            <Run Text="Item: " /><Run Text="{Binding Card.ItemName, Mode=OneWay}" />
+                            <Run Text=" | Abilities: " /><Run Text="{Binding Card.AbilityCount, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="In battle" Foreground="#F0C050" FontWeight="SemiBold"
+                                   Visibility="{Binding Card.IsFighting, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <TabControl Margin="8" Background="#1B1B26" BorderBrush="#3F3F5A">
+
+        <!-- ============ Tab 1: the text game ============ -->
+        <TabItem Header="Гра">
+            <Grid Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: output field and input line -->
+                <Grid Grid.Column="0" Margin="0,0,12,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="#101018" BorderBrush="#3F3F5A" BorderThickness="1" CornerRadius="4">
+                        <ScrollViewer x:Name="OutputScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="8">
+                            <ItemsControl ItemsSource="{Binding Lines}" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Margin="0,8,0,0" Foreground="#F0C050" FontWeight="SemiBold"
+                               Text="{Binding BattleSummary}"
+                               Visibility="{Binding HasBattle, Converter={StaticResource BoolToVisibility}}" />
+
+                    <DockPanel Grid.Row="2" Margin="0,8,0,0" LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding Prompt}" Foreground="#8EA2FF"
+                                   FontFamily="Consolas" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <Button DockPanel.Dock="Right" Content="Надіслати" Margin="6,0,0,0"
+                                Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}" />
+                        <TextBox x:Name="InputBox" FontFamily="Consolas" FontSize="14" Padding="4"
+                                 Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanSend}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding SendCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+                </Grid>
+
+                <!-- Right: saves and quick commands -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Збереження" Style="{StaticResource SectionTitle}" Margin="0,0,0,6" />
+                        <ListBox ItemsSource="{Binding Saves}" SelectedItem="{Binding SelectedSave, Mode=TwoWay}"
+                                 Height="150" Background="#101018" Foreground="#D8D8E0" BorderBrush="#3F3F5A" />
+                        <TextBlock Text="Назва збереження" Foreground="#9A9AB8" Margin="0,8,0,2" />
+                        <TextBox Text="{Binding SaveName, UpdateSourceTrigger=PropertyChanged}" Padding="4" Margin="0,0,0,8" />
+                        <WrapPanel>
+                            <Button Content="Зберегти" Command="{Binding SaveGameCommand}" IsEnabled="{Binding CanSave}" />
+                            <Button Content="Завантажити" Command="{Binding LoadGameCommand}" IsEnabled="{Binding CanLoad}" />
+                            <Button Content="Продовжити" Command="{Binding ContinueGameCommand}" IsEnabled="{Binding CanContinue}" />
+                        </WrapPanel>
+
+                        <TextBlock Text="Команди" Style="{StaticResource SectionTitle}" />
+                        <WrapPanel IsEnabled="{Binding IsMain}">
+                            <Button Content="help" Command="{Binding QuickCommand}" CommandParameter="help" />
+                            <Button Content="Персонажі" Command="{Binding QuickCommand}" CommandParameter="ls char" />
+                            <Button Content="Створити" Command="{Binding QuickCommand}" CommandParameter="create char" />
+                            <Button Content="Бій" Command="{Binding QuickCommand}" CommandParameter="play" />
+                            <Button Content="Бій з AI" Command="{Binding QuickCommand}" CommandParameter="play --ai" />
+                            <Button Content="Результати" Command="{Binding QuickCommand}" CommandParameter="results" />
+                        </WrapPanel>
+
+                        <TextBlock Text="Дії в бою" Style="{StaticResource SectionTitle}" />
+                        <WrapPanel IsEnabled="{Binding IsBattle}">
+                            <Button Content="Атака" Command="{Binding QuickCommand}" CommandParameter="attack" />
+                            <Button Content="Лікування" Command="{Binding QuickCommand}" CommandParameter="heal" />
+                            <Button Content="Захист" Command="{Binding QuickCommand}" CommandParameter="defend" />
+                            <Button Content="Вміння" Command="{Binding QuickCommand}" CommandParameter="ability" />
+                            <Button Content="Стан" Command="{Binding QuickCommand}" CommandParameter="status" />
+                            <Button Content="Історія" Command="{Binding QuickCommand}" CommandParameter="history" />
+                            <Button Content="Здатися" Command="{Binding QuickCommand}" CommandParameter="surrender" />
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+
+        <!-- ============ Tab 2: the catalog of characters ============ -->
+        <TabItem Header="Каталог персонажів">
+            <Grid Margin="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Adding a character from the remote database -->
+                <WrapPanel Grid.Row="0" Margin="0,0,0,8">
+                    <TextBlock Text="Id на сервері:" Foreground="#9A9AB8" VerticalAlignment="Center" Margin="0,0,6,6" />
+                    <TextBox Width="140" Padding="4" Margin="0,0,12,6"
+                             Text="{Binding RemoteId, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Ім'я в грі:" Foreground="#9A9AB8" VerticalAlignment="Center" Margin="0,0,6,6" />
+                    <TextBox Width="140" Padding="4" Margin="0,0,12,6"
+                             Text="{Binding RemoteName, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="Додати із сервера" Command="{Binding AddRemoteCommand}" IsEnabled="{Binding CanAddRemote}" />
+                    <Button Content="Список id" Command="{Binding QuickCommand}" CommandParameter="remote chars"
+                            IsEnabled="{Binding IsMain}" />
+                </WrapPanel>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <ItemsControl ItemsSource="{Binding Catalog.Cards}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <TextBlock Text="Персонажів ще немає. Створіть їх у вкладці «Гра» або додайте із сервера."
+                                   Foreground="#7C7C90" Margin="8" TextWrapping="Wrap"
+                                   Visibility="{Binding Catalog.IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</Window>

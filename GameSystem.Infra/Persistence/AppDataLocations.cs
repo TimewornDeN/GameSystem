@@ -31,5 +31,7 @@ public static class AppDataLocations
 
     public static string Saves(string root) => Path.Combine(root, "saves");
 
+    public static string Portraits(string root) => Path.Combine(root, "portraits");
+
     public static string Results(string root) => Path.Combine(root, "results", "game-results.json");
 }

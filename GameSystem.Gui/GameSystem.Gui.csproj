@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>GameSystem.Gui</RootNamespace>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameSystem.Core\GameSystem.Core.csproj" />
+    <ProjectReference Include="..\GameSystem.Infra\GameSystem.Infra.csproj" />
+    <ProjectReference Include="..\GameSystem.Presentation\GameSystem.Presentation.csproj" />
+  </ItemGroup>
+
+  <!-- Sample character profiles are copied next to the program, so the 'import' command finds them. -->
+  <ItemGroup>
+    <None Include="..\samples\characters\*.json" Link="characters\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
