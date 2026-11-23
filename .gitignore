@@ -16,3 +16,7 @@ results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Result of publish scripts
+dist/
+publish/

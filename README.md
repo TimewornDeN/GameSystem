@@ -3,7 +3,51 @@
 Проста текстова гра з консольним і графічним (WPF) інтерфейсом (.NET 10). Можна створювати персонажів, предмети й вміння,
 брати персонажів із віддаленої бази, битися двома персонажами, зберігати гру та результати боїв.
 
-## Запуск
+## Встановлення (готова програма)
+
+Готові пакети лежать на сторінці [Releases](../../releases) репозиторію. .NET встановлювати не потрібно: усе, що треба для запуску, вже всередині.
+
+| Пакет | Що це | Система |
+|---|---|---|
+| `GameSystem-Window-<версія>-win-x64.zip` | графічне вікно (`GameSystemWindow.exe`) | Windows 10/11, 64 біти |
+| `GameSystem-Console-<версія>-win-x64.zip` | консольна версія (`GameSystem.exe`) | Windows 10/11, 64 біти |
+
+1. Завантажити потрібний zip і розпакувати в будь-яку папку.
+2. Запустити `GameSystemWindow.exe` (двічі клацнути) або `GameSystem.exe` (з терміналу чи двічі клацнути).
+3. Збереження й результати боїв програма сама кладе в `%LOCALAPPDATA%\GameSystem`, тому папку програми можна видалити чи перенести без втрати збережень.
+
+Якщо Windows SmartScreen показує «Windows protected your PC», це через те, що exe не має платного цифрового підпису: «Більше інформації» → «Усе одно виконати».
+
+## Збирання з початкового коду
+
+Потрібне лише [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Більше нічого окремо ставити не треба: NuGet-пакети (xUnit для тестів) завантажуються самі при першому збиранні.
+
+```
+git clone https://github.com/TimewornDeN/GameSystem.git
+cd GameSystem
+dotnet test GameSystem.slnx -c Release
+```
+
+Зібрати пакети для розповсюдження (Release, self-contained, один exe-файл):
+
+```
+# Windows, PowerShell: консольна й віконна версії
+.\scripts\publish.ps1
+
+# Linux / macOS: лише консольна версія (вікно працює тільки на Windows)
+./scripts/publish.sh linux-x64
+```
+
+Результат з'являється в папці `dist`: по одному zip на кожну програму. Скрипт спершу запускає всі тести і не збирає пакети, якщо хоч один тест не пройшов.
+Один проєкт вручну:
+
+```
+dotnet publish GameSystem.CLI/GameSystem.CLI.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
+
+Реліз на GitHub створюється сам: достатньо поставити тег `v1.0.0` і виконати `git push --tags`. Файл `.github/workflows/release.yml` прожене тести, збере пакети й додасть zip до релізу.
+
+## Запуск з початкового коду
 
 ```
 dotnet run --project GameSystem.CLI
@@ -52,7 +96,7 @@ continue evening     # те саме, але з вибраного збереж�
 
 ## Нові персонажі з файлу
 
-Профіль персонажа лежить у папці `characters` (запуск із поточної папки) як `<name>.json`. Приклади є в `samples/characters`.
+Профіль персонажа лежить у папці `characters` поруч із програмою як `<name>.json` (у пакеті й при `dotnet run` ця папка вже є з прикладами). Приклади є в `samples/characters`.
 
 ```
 import --list           # які профілі є
@@ -75,6 +119,8 @@ import zed               # додати персонажа Zed з його пр�
 | `GameSystem.ConsoleApp` | автоматична симуляція бою |
 | `GameSystem.Presentation` | логіка вікна без WPF: консоль вікна, запуск гри в окремому потоці, view-моделі |
 | `GameSystem.Gui` | графічне вікно на WPF (XAML, конвертери, точка збирання) |
+| `scripts` | скрипти збирання пакетів (`publish.ps1`, `publish.sh`) |
+| `.github/workflows` | автоматичний реліз на GitHub |
 | `GameSystem.FileManager` | файловий менеджер (практична 12) |
 | `GameSystem.Tests` | тести |
 

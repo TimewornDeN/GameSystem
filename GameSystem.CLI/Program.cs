@@ -15,7 +15,7 @@ ICombatLogger logger = new ConsoleCombatLogger();
 string dataRoot = AppDataLocations.Root();
 IGameStateRepository states = new JsonGameStateRepository(AppDataLocations.Saves(dataRoot));
 ICharacterProfileSource profiles = new JsonCharacterProfileSource(
-    Path.Combine(Directory.GetCurrentDirectory(), "characters"));
+    Path.Combine(AppContext.BaseDirectory, "characters"));
 IGameResultRepository results = new JsonGameResultRepository(AppDataLocations.Results(dataRoot));
 
 var httpClient = new HttpClient { BaseAddress = new Uri("https://genshin.jmp.blue/") };
