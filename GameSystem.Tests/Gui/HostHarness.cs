@@ -16,14 +16,14 @@ internal sealed class HostHarness : IDisposable
     private readonly BlockingCollection<GameSnapshot> _snapshots = new();
     private readonly List<ConsoleLine> _lines = [];
 
-    public HostHarness(InMemoryGameStateRepository? states = null, InMemoryGameResultRepository? results = null, bool start = true, FakeGenshinApiClient? api = null)
+    public HostHarness(InMemoryGameStateRepository? states = null, InMemoryGameResultRepository? results = null, bool start = true, FakeGenshinApiClient? api = null, InMemoryCharacterCatalogStore? catalogStore = null)
     {
         States = states ?? new InMemoryGameStateRepository();
         Results = results ?? new InMemoryGameResultRepository();
         Console = new GuiConsole();
         Console.LineWritten += line => { lock (_lines) _lines.Add(line); };
 
-        Host = new GameHost(Console, States, Results, apiClient: api, opponentStrategy: new AlwaysDefendStrategy(), clock: () => new DateTime(2026, 11, 21, 12, 0, 0, DateTimeKind.Utc));
+        Host = new GameHost(Console, States, Results, apiClient: api, opponentStrategy: new AlwaysDefendStrategy(), clock: () => new DateTime(2026, 11, 21, 12, 0, 0, DateTimeKind.Utc), catalogStore: catalogStore);
         Host.SnapshotReady += _snapshots.Add;
 
         if (start)

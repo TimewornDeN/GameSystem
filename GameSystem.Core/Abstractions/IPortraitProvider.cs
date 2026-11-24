@@ -11,4 +11,10 @@ public interface IPortraitProvider
     /// (unknown id, no network): the caller shows a placeholder then.
     /// </summary>
     Task<byte[]?> GetPortraitAsync(string remoteId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Full path of the file where the portrait is kept on the disk, or null when it is not there (yet) or the
+    /// provider keeps no files. Used to tell the user where the downloaded picture lies.
+    /// </summary>
+    string? GetLocalPath(string remoteId) => null;
 }

@@ -84,7 +84,7 @@ public sealed record CharacterCard(
         ];
     }
 
-    private static string Shorten(string text)
+    internal static string Shorten(string text)
     {
         string oneLine = text.ReplaceLineEndings(" ").Trim();
         return oneLine.Length <= MaxDescriptionLength ? oneLine : oneLine[..(MaxDescriptionLength - 1)].TrimEnd() + "\u2026";

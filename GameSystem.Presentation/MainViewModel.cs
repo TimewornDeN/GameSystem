@@ -27,6 +27,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _battleSummary = string.Empty;
     private string _remoteId = string.Empty;
     private string _remoteName = string.Empty;
+    private string _statusText = string.Empty;
     private PromptMode _mode = PromptMode.Busy;
 
     /// <param name="post">
@@ -47,6 +48,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         LoadGameCommand = new RelayCommand(LoadGame);
         ContinueGameCommand = new RelayCommand(ContinueGame);
         AddRemoteCommand = new RelayCommand(AddRemote);
+        AddServerCharacterCommand = new RelayCommand(parameter => AddServerCharacter(parameter as string));
 
         // Subscribe before the game starts, so not a single line is lost.
         _console.LineWritten += OnLineWritten;
@@ -72,6 +74,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Creates a character from the remote database: <c>remote create &lt;id&gt; &lt;name&gt;</c>.</summary>
     public ICommand AddRemoteCommand { get; }
+
+    /// <summary>
+    /// The button of a card of the server catalog: creates that character in the game
+    /// (<c>remote create &lt;id&gt; &lt;id&gt;</c>). The command parameter is the id of the character on the server.
+    /// </summary>
+    public ICommand AddServerCharacterCommand { get; }
+
+    /// <summary>The last success, warning or error message of the game, so the catalog tabs can show what a button did.</summary>
+    public string StatusText
+    {
+        get => _statusText;
+        private set => SetProperty(ref _statusText, value);
+    }
 
     public string InputText
     {
@@ -156,8 +171,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(CanAddRemote));
             OnPropertyChanged(nameof(IsMain));
             OnPropertyChanged(nameof(IsBattle));
+            OnPropertyChanged(nameof(IsBusy));
         }
     }
+
+    /// <summary>The game is executing a command (for example downloading the catalog) and does not read input.</summary>
+    public bool IsBusy => _mode == PromptMode.Busy;
 
     public bool CanSend => _mode != PromptMode.Busy;
 
@@ -237,8 +256,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Submit($"remote create {id} {name}");
     }
 
+    private void AddServerCharacter(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id) || id.Contains(' ') || !IsMain)
+            return;
+
+        Submit($"remote create {id} {id}");
+    }
+
     private void OnLineWritten(ConsoleLine line) => _post(() =>
     {
+        if (line.Style is LineStyle.Success or LineStyle.Warning or LineStyle.Error)
+            StatusText = line.Text;
+
         Lines.Add(line);
         while (Lines.Count > MaxLines)
             Lines.RemoveAt(0);
@@ -263,6 +293,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         Catalog.Update(snapshot.Cards);
+        Catalog.UpdateServer(snapshot.ServerCatalog ?? []);
         Mode = snapshot.Mode;
     });
 

@@ -44,7 +44,7 @@ public class CharacterSheetBuilderTests
         Assert.Contains("Element: Cryo", sheet);
         Assert.Contains("5\u2605", sheet);
         Assert.Contains("A powerful spellcaster.", sheet);
-        Assert.Contains("[Portrait](https://genshin.jmp.blue/characters/elara/portrait)", sheet);
+        Assert.Contains("[Portrait](https://genshin.jmp.blue/characters/elara/icon-big)", sheet);
     }
 
     [Fact]

@@ -16,6 +16,9 @@ public sealed class CatalogViewModel : ObservableObject
     private readonly Dictionary<string, byte[]> _cache = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _requested = new(StringComparer.OrdinalIgnoreCase);
 
+    // The server catalog has dozens of cards: the portraits are asked for a few at a time, not all at once.
+    private readonly SemaphoreSlim _downloads = new(4);
+
     public CatalogViewModel(IPortraitProvider? portraits, Action<Action> post)
     {
         _portraits = portraits;
@@ -25,6 +28,38 @@ public sealed class CatalogViewModel : ObservableObject
     public ObservableCollection<CharacterCardViewModel> Cards { get; } = [];
 
     public bool IsEmpty => Cards.Count == 0;
+
+    /// <summary>Cards of every character the remote database offers (the downloaded catalog).</summary>
+    public ObservableCollection<ServerCharacterCardViewModel> ServerCards { get; } = [];
+
+    public bool ServerIsEmpty => ServerCards.Count == 0;
+
+    /// <summary>Makes the list of server cards equal to <paramref name="cards"/>; nothing is touched when it is already so.</summary>
+    public void UpdateServer(IReadOnlyList<ServerCharacterCard> cards)
+    {
+        ArgumentNullException.ThrowIfNull(cards);
+
+        if (ServerCards.Count == cards.Count && ServerCards.Zip(cards).All(pair => pair.First.Card == pair.Second))
+            return;
+
+        ServerCards.Clear();
+        List<string> toLoad = [];
+        foreach (var card in cards)
+        {
+            var view = new ServerCharacterCardViewModel(card);
+            if (_cache.TryGetValue(card.Id, out var bytes))
+                view.PortraitBytes = bytes;
+            else
+                toLoad.Add(card.Id);
+
+            ServerCards.Add(view);
+        }
+
+        foreach (string id in toLoad)
+            StartLoading(id);
+
+        OnPropertyChanged(nameof(ServerIsEmpty));
+    }
 
     /// <summary>Makes the list of cards equal to <paramref name="cards"/>, touching as little as possible.</summary>
     public void Update(IReadOnlyList<CharacterCard> cards)
@@ -80,6 +115,7 @@ public sealed class CatalogViewModel : ObservableObject
     private async Task LoadAsync(string remoteId)
     {
         byte[]? bytes = null;
+        await _downloads.WaitAsync();
         try
         {
             bytes = await _portraits!.GetPortraitAsync(remoteId);
@@ -87,6 +123,10 @@ public sealed class CatalogViewModel : ObservableObject
         catch (Exception)
         {
             // A portrait is decoration: any failure just leaves the placeholder.
+        }
+        finally
+        {
+            _downloads.Release();
         }
 
         if (bytes is null)
@@ -96,6 +136,9 @@ public sealed class CatalogViewModel : ObservableObject
         {
             _cache[remoteId] = bytes;
             foreach (var view in Cards.Where(c => string.Equals(c.Card.RemoteId, remoteId, StringComparison.OrdinalIgnoreCase)))
+                view.PortraitBytes = bytes;
+
+            foreach (var view in ServerCards.Where(c => string.Equals(c.Card.Id, remoteId, StringComparison.OrdinalIgnoreCase)))
                 view.PortraitBytes = bytes;
         });
     }

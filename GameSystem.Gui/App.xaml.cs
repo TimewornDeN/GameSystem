@@ -37,6 +37,7 @@ public partial class App : Application
         };
         IGenshinApiClient apiClient = new HttpGenshinApiClient(httpClient);
         IPortraitProvider portraits = new HttpPortraitProvider(httpClient, AppDataLocations.Portraits(dataRoot));
+        ICharacterCatalogStore catalogStore = new JsonCharacterCatalogStore(AppDataLocations.Catalog(dataRoot));
 
         _host = new GameHost(
             console,
@@ -44,7 +45,9 @@ public partial class App : Application
             results,
             apiClient,
             profiles,
-            welcomeNote: $"Saves and results are kept in: {dataRoot}");
+            welcomeNote: $"Saves and results are kept in: {dataRoot}",
+            catalogStore: catalogStore,
+            portraits: portraits);
 
         // The view model is created on the UI thread, so it captures the dispatcher's synchronization context.
         _viewModel = new MainViewModel(_host, console, portraits);

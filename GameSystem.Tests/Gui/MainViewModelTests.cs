@@ -169,4 +169,38 @@ public class MainViewModelTests
         Assert.False(viewModel.CanContinue);
         Assert.True(viewModel.Catalog.Cards.All(c => c.Card.IsFighting));
     }
+
+    [Fact]
+    public void TheAddButtonOfAServerCard_CreatesThatCharacterInTheGame_AndShowsTheResult()
+    {
+        var api = new FakeGenshinApiClient();
+        api.AddCharacter(new RemoteCharacterInfo("albedo", "Albedo", "Kreideprinz", "Geo", "Sword", 5, "Chief Alchemist.", []));
+        using var game = new HostHarness(start: false, api: api);
+        using var viewModel = CreateViewModel(game);
+        WaitUntil(() => viewModel.Mode == PromptMode.Main);
+
+        viewModel.AddServerCharacterCommand.Execute("albedo");
+
+        WaitUntil(() => viewModel.Catalog.Cards.Count == 1 && viewModel.Mode == PromptMode.Main);
+        Assert.Equal("albedo", viewModel.Catalog.Cards[0].Card.RemoteId);
+        Assert.Contains("Created", viewModel.StatusText);
+    }
+
+    [Fact]
+    public void TheRefreshButtonOfTheCatalog_FillsTheServerCards()
+    {
+        var api = new FakeGenshinApiClient();
+        api.AddCharacter(new RemoteCharacterInfo("albedo", "Albedo", "Kreideprinz", "Geo", "Sword", 5, "Chief Alchemist.", []));
+        api.AddCharacter(new RemoteCharacterInfo("amber", "Amber", "Outrider", "Pyro", "Bow", 4, "A scout.", []));
+        using var game = new HostHarness(start: false, api: api, catalogStore: new InMemoryCharacterCatalogStore());
+        using var viewModel = CreateViewModel(game);
+        WaitUntil(() => viewModel.Mode == PromptMode.Main);
+        Assert.True(viewModel.Catalog.ServerIsEmpty);
+
+        viewModel.QuickCommand.Execute("catalog refresh");
+
+        WaitUntil(() => viewModel.Catalog.ServerCards.Count == 2 && viewModel.Mode == PromptMode.Main);
+        Assert.Equal(["Albedo", "Amber"], viewModel.Catalog.ServerCards.Select(c => c.Card.Name));
+        Assert.False(viewModel.IsBusy);
+    }
 }

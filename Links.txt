@@ -1,0 +1,30 @@
+GameSystem — Практичне заняття 18. Фіналізація проєкту
+Студент: Денис Онуферко, група КН32
+
+Репозиторій на GitHub:
+https://github.com/TimewornDeN/GameSystem
+
+Дизайн-документ (розділ 13 — фіналізація):
+https://github.com/TimewornDeN/GameSystem/blob/main/docs/DESIGN.md
+
+README (встановлення, збирання, команди):
+https://github.com/TimewornDeN/GameSystem/blob/main/README.md
+
+Реліз із готовими пакетами (exe):
+https://github.com/TimewornDeN/GameSystem/releases/latest
+
+Скрипти збирання пакетів:
+https://github.com/TimewornDeN/GameSystem/tree/main/scripts
+
+Проєкти рішення:
+GameSystem.Core          https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.Core
+GameSystem.Infra         https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.Infra
+GameSystem.CLI           https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.CLI
+GameSystem.Presentation  https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.Presentation
+GameSystem.Gui           https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.Gui
+GameSystem.ConsoleApp    https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.ConsoleApp
+GameSystem.FileManager   https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.FileManager
+GameSystem.Tests         https://github.com/TimewornDeN/GameSystem/tree/main/GameSystem.Tests
+
+Запуск готової програми (Windows): розпакувати zip із релізу й запустити GameSystemWindow.exe (вікно) або GameSystem.exe (консоль)
+Збирання пакетів: .\scripts\publish.ps1

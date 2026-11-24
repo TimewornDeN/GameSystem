@@ -34,4 +34,7 @@ public static class AppDataLocations
     public static string Portraits(string root) => Path.Combine(root, "portraits");
 
     public static string Results(string root) => Path.Combine(root, "results", "game-results.json");
+
+    /// <summary>The saved catalog of the characters of the remote database.</summary>
+    public static string Catalog(string root) => Path.Combine(root, "catalog", "characters.json");
 }

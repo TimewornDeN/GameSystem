@@ -122,6 +122,46 @@
                 </Grid>
             </Border>
         </DataTemplate>
+        <!-- One card of the server catalog: a character the remote database offers, with its portrait. -->
+        <DataTemplate DataType="{x:Type cat:ServerCharacterCardViewModel}">
+            <Border Width="310" Margin="8" Padding="12" CornerRadius="8"
+                    Background="#2A2A3C" BorderBrush="#3F3F5A" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Width="80" Height="80" VerticalAlignment="Top" Margin="0,0,12,0">
+                        <Ellipse Fill="#4B4B6B" />
+                        <TextBlock Text="{Binding Card.Initial}" FontSize="34" FontWeight="Bold"
+                                   Foreground="#C8C8E0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Ellipse>
+                            <Ellipse.Fill>
+                                <ImageBrush Stretch="UniformToFill"
+                                            ImageSource="{Binding PortraitBytes, Converter={StaticResource BytesToImage}}" />
+                            </Ellipse.Fill>
+                        </Ellipse>
+                    </Grid>
+
+                    <StackPanel Grid.Column="1">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="{Binding Card.Name}" FontSize="17" FontWeight="Bold" Foreground="#F0F0FA"
+                                       DockPanel.Dock="Left" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Card.Stars}" Foreground="#E6B450" DockPanel.Dock="Right" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding Card.Title}" Foreground="#C792EA" FontStyle="Italic" />
+                        <TextBlock Text="{Binding Card.Subtitle}" Foreground="#5CC8E0" />
+                        <TextBlock Text="{Binding Card.Description}" Foreground="#B8B8CC" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Card.TalentsText}" Foreground="#9A9AB8" Margin="0,4,0,0" />
+                        <Button Content="Додати в гру" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                Command="{Binding DataContext.AddServerCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding Card.Id}"
+                                IsEnabled="{Binding DataContext.IsMain, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </Window.Resources>
 
     <TabControl Margin="8" Background="#1B1B26" BorderBrush="#3F3F5A">
@@ -206,12 +246,52 @@
             </Grid>
         </TabItem>
 
-        <!-- ============ Tab 2: the catalog of characters ============ -->
+        <!-- ============ Tab 2: the catalog of all characters of the server ============ -->
         <TabItem Header="Каталог персонажів">
             <Grid Margin="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <WrapPanel Grid.Row="0" Margin="0,0,0,8">
+                    <Button Content="Оновити каталог" Command="{Binding QuickCommand}" CommandParameter="catalog refresh"
+                            IsEnabled="{Binding IsMain}" />
+                    <TextBlock Text="Список і портрети зберігаються на диску, тому каталог відкривається й без мережі."
+                               Foreground="#7C7C90" VerticalAlignment="Center" Margin="6,0,0,6" />
+                    <TextBlock Text="Виконується команда..." Foreground="#F0C050" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Margin="12,0,0,6"
+                               Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                </WrapPanel>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <ItemsControl ItemsSource="{Binding Catalog.ServerCards}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <TextBlock Text="Каталог ще не завантажено. Натисніть «Оновити каталог»."
+                                   Foreground="#7C7C90" Margin="8" TextWrapping="Wrap"
+                                   Visibility="{Binding Catalog.ServerIsEmpty, Converter={StaticResource BoolToVisibility}}" />
+                    </Grid>
+                </ScrollViewer>
+
+                <TextBlock Grid.Row="2" Margin="0,8,0,0" Text="{Binding StatusText}"
+                           Foreground="#9A9AB8" TextWrapping="Wrap" />
+            </Grid>
+        </TabItem>
+
+        <!-- ============ Tab 3: the characters that are in the game ============ -->
+        <TabItem Header="Персонажі в грі">
+            <Grid Margin="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Adding a character from the remote database -->
@@ -241,6 +321,9 @@
                                    Visibility="{Binding Catalog.IsEmpty, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
                 </ScrollViewer>
+
+                <TextBlock Grid.Row="2" Margin="0,8,0,0" Text="{Binding StatusText}"
+                           Foreground="#9A9AB8" TextWrapping="Wrap" />
             </Grid>
         </TabItem>
     </TabControl>

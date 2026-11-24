@@ -27,7 +27,9 @@ public static class CliFactory
         ICommandParser? parser = null,
         ITurnStrategy? opponentStrategy = null,
         Func<DateTime>? clock = null,
-        ICharacterProfileSource? profiles = null)
+        ICharacterProfileSource? profiles = null,
+        ICharacterCatalogStore? catalogStore = null,
+        IPortraitProvider? portraits = null)
     {
         world ??= new GameWorld();
         parser ??= new CommandParser();
@@ -51,6 +53,8 @@ public static class CliFactory
         infrastructure.RegisterCommand(new ContinueCommand(world, states, displayer, logger, battle));
         if (profiles is not null)
             infrastructure.RegisterCommand(new ImportCommand(world, profiles, displayer, logger));
+        if (apiClient is not null && catalogStore is not null)
+            infrastructure.RegisterCommand(new CatalogCommand(new CharacterCatalog(apiClient, catalogStore), displayer, portraits));
         cli.UseStrategy(infrastructure);
 
         return cli;

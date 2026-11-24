@@ -41,9 +41,9 @@ public static class CharacterSheetBuilder
             abilitiesHeading.AddChild(new Paragraph($"{ability.Id}: {ability.Description}"));
         }
 
-        if (remoteInfo is not null)
+        if (remoteInfo is not null && !string.IsNullOrWhiteSpace(remoteInfo.Id))
         {
-            heading.AddChild(new Link("Portrait", $"https://genshin.jmp.blue/characters/{remoteInfo.Id}/portrait"));
+            heading.AddChild(new Link("Portrait", RemoteLinks.Portrait(remoteInfo.Id)));
         }
 
         return root;

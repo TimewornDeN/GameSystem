@@ -1,4 +1,5 @@
 using GameSystem.Core.Abstractions;
+using GameSystem.Core.Models;
 using GameSystem.Presentation.Catalog;
 using Xunit;
 
@@ -93,5 +94,62 @@ public class CatalogViewModelTests
         catalog.Update([Card("One", "albedo"), Card("Two", "albedo")]);
 
         Assert.All(catalog.Cards, c => Assert.True(c.HasPortrait));
+    }
+
+    private static ServerCharacterCard ServerCard(string id, string name) => new(id, name, "", "", "", 5, 0);
+
+    [Fact]
+    public void UpdateServer_ShowsOneViewPerCharacterOfTheServer_AndLoadsTheirPortraits()
+    {
+        var catalog = Create(new FakePortraits("albedo"));
+        Assert.True(catalog.ServerIsEmpty);
+
+        catalog.UpdateServer([ServerCard("albedo", "Albedo"), ServerCard("amber", "Amber")]);
+
+        Assert.Equal(["Albedo", "Amber"], catalog.ServerCards.Select(c => c.Card.Name));
+        Assert.False(catalog.ServerIsEmpty);
+        Assert.True(catalog.ServerCards[0].HasPortrait);
+        Assert.False(catalog.ServerCards[1].HasPortrait);
+    }
+
+    [Fact]
+    public void UpdateServer_WithTheSameCharacters_LeavesTheListAlone()
+    {
+        var catalog = Create(null);
+        catalog.UpdateServer([ServerCard("albedo", "Albedo")]);
+        var view = catalog.ServerCards[0];
+
+        catalog.UpdateServer([ServerCard("albedo", "Albedo")]);
+
+        Assert.Same(view, catalog.ServerCards[0]);
+    }
+
+    [Fact]
+    public void UpdateServer_TakesThePortraitOfACharacterThatIsAlreadyInTheGame_WithoutAskingAgain()
+    {
+        var portraits = new FakePortraits("albedo");
+        var catalog = Create(portraits);
+        catalog.Update([Card("Albi", "albedo")]);
+
+        catalog.UpdateServer([ServerCard("albedo", "Albedo")]);
+
+        Assert.True(catalog.ServerCards[0].HasPortrait);
+        Assert.Single(portraits.Requested);
+    }
+
+    [Fact]
+    public void ServerCharacterCard_TakesItsShortInfoFromTheServerResponse()
+    {
+        var info = new RemoteCharacterInfo("albedo", "Albedo", "Kreideprinz", "Geo", "Sword", 5,
+            new string('x', 300), [new RemoteAbilityInfo("Favonius Bladework", "Normal attack")]);
+
+        var card = ServerCharacterCard.From(info);
+
+        Assert.Equal("albedo", card.Id);
+        Assert.Equal("Geo \u00B7 Sword", card.Subtitle);
+        Assert.Equal("\u2605\u2605\u2605\u2605\u2605", card.Stars);
+        Assert.Equal("A", card.Initial);
+        Assert.Equal(1, card.TalentCount);
+        Assert.True(card.Description.Length <= 140);
     }
 }

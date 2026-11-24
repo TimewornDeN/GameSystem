@@ -41,6 +41,32 @@ public class HttpPortraitProviderTests
     }
 
     [Fact]
+    public async Task GetPortraitAsync_NamesTheFileByTheRealImageFormat_AndTellsWhereItLies()
+    {
+        string cache = NewTempDirectory();
+        try
+        {
+            // The stub sends text (UTF-8), so a format whose first bytes are plain ASCII is used: GIF starts with "GIF8".
+            string gif = "GIF89a-----";
+            var provider = CreateProvider(new StubHttpMessageHandler().RespondWith("characters/albedo/icon-big", gif), cache);
+
+            Assert.Null(provider.GetLocalPath("albedo"));
+
+            Assert.NotNull(await provider.GetPortraitAsync("albedo"));
+
+            string? path = provider.GetLocalPath("albedo");
+            Assert.NotNull(path);
+            Assert.EndsWith(".gif", path);
+            Assert.True(File.Exists(path));
+            Assert.Null(provider.GetLocalPath("keqing"));
+        }
+        finally
+        {
+            Cleanup(cache);
+        }
+    }
+
+    [Fact]
     public async Task GetPortraitAsync_ReturnsNull_WhenTheServerHasNoPicture()
     {
         string cache = NewTempDirectory();

@@ -20,9 +20,12 @@ IGameResultRepository results = new JsonGameResultRepository(AppDataLocations.Re
 
 var httpClient = new HttpClient { BaseAddress = new Uri("https://genshin.jmp.blue/") };
 IGenshinApiClient apiClient = new HttpGenshinApiClient(httpClient);
+// The catalog of the server's characters and their portraits are kept on the disk, so they work without the network later.
+ICharacterCatalogStore catalogStore = new JsonCharacterCatalogStore(AppDataLocations.Catalog(dataRoot));
+IPortraitProvider portraits = new HttpPortraitProvider(httpClient, AppDataLocations.Portraits(dataRoot));
 
 // The facade, already plugged with the information, transformative and infrastructure strategies.
-Cli cli = CliFactory.Create(displayer, input, logger, states, results, apiClient, profiles: profiles);
+Cli cli = CliFactory.Create(displayer, input, logger, states, results, apiClient, profiles: profiles, catalogStore: catalogStore, portraits: portraits);
 
 displayer.Show("--- GameSystem CLI Started. Type 'help' for commands, 'exit' to quit. ---", DisplayKind.Title);
 displayer.Info($"Saves and results are kept in: {dataRoot}");

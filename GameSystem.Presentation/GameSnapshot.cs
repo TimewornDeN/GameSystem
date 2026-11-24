@@ -28,4 +28,5 @@ public sealed record GameSnapshot(
     string? LatestSave,
     PromptMode Mode,
     string Prompt,
-    string BattleSummary);
+    string BattleSummary,
+    IReadOnlyList<ServerCharacterCard>? ServerCatalog = null);

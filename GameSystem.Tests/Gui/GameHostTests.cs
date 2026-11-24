@@ -128,4 +128,22 @@ public class GameHostTests
         Assert.True(game.Host.WaitForExit(TimeSpan.FromSeconds(5)));
         game.Dispose();
     }
+
+    [Fact]
+    public void TheSavedServerCatalog_IsPartOfTheSnapshots_AndIsReadAgainAfterTheCatalogCommand()
+    {
+        var store = new InMemoryCharacterCatalogStore();
+        store.Items.Add(new GameSystem.Core.Models.RemoteCharacterInfo("zed", "Zed", "", "Electro", "Catalyst", 4, "", []));
+        var api = new FakeGenshinApiClient();
+        api.AddCharacter(new GameSystem.Core.Models.RemoteCharacterInfo("albedo", "Albedo", "Kreideprinz", "Geo", "Sword", 5, "", []));
+        using var game = new HostHarness(api: api, catalogStore: store);
+
+        var first = game.WaitFor(s => s.Mode == PromptMode.Main);
+        Assert.Equal(["Zed"], first.ServerCatalog!.Select(c => c.Name));
+
+        game.Type("catalog refresh");
+
+        var after = game.WaitFor(s => s.Mode == PromptMode.Main && s.ServerCatalog is { Count: 1 } list && list[0].Name == "Albedo");
+        Assert.Equal("Kreideprinz", after.ServerCatalog![0].Title);
+    }
 }

@@ -20,6 +20,9 @@ public sealed class GameHost : IDisposable
     private readonly IGameStateRepository _states;
     private readonly Cli _cli;
     private readonly string? _welcomeNote;
+    private readonly ICharacterCatalogStore? _catalogStore;
+    private IReadOnlyList<ServerCharacterCard> _serverCatalog = [];
+    private bool _catalogDirty = true;
     private Thread? _thread;
 
     public GameHost(
@@ -30,11 +33,14 @@ public sealed class GameHost : IDisposable
         ICharacterProfileSource? profiles = null,
         ITurnStrategy? opponentStrategy = null,
         Func<DateTime>? clock = null,
-        string? welcomeNote = null)
+        string? welcomeNote = null,
+        ICharacterCatalogStore? catalogStore = null,
+        IPortraitProvider? portraits = null)
     {
         _console = console ?? throw new ArgumentNullException(nameof(console));
         _states = states ?? throw new ArgumentNullException(nameof(states));
         _welcomeNote = welcomeNote;
+        _catalogStore = catalogStore;
 
         World = new GameWorld();
         _cli = CliFactory.Create(
@@ -47,7 +53,9 @@ public sealed class GameHost : IDisposable
             world: World,
             opponentStrategy: opponentStrategy,
             clock: clock,
-            profiles: profiles);
+            profiles: profiles,
+            catalogStore: catalogStore,
+            portraits: portraits);
 
         _console.WaitingForInput += OnWaitingForInput;
     }
@@ -99,6 +107,10 @@ public sealed class GameHost : IDisposable
                 continue;
             }
 
+            // The 'catalog' command may change the saved catalog: the next snapshot reads it again.
+            if (line.TrimStart().StartsWith("catalog", StringComparison.OrdinalIgnoreCase))
+                _catalogDirty = true;
+
             try
             {
                 _cli.ExecCommand(line);
@@ -142,7 +154,29 @@ public sealed class GameHost : IDisposable
             : $"Round {battle.Round}: {battle.First.Name} ({battle.First.Health}/{battle.First.MaxHealth}) vs "
               + $"{battle.Second.Name} ({battle.Second.Health}/{battle.Second.MaxHealth}), turn of {battle.CurrentActor.Name}";
 
-        return new GameSnapshot(CharacterCard.BuildAll(World), SafeList(), SafeLatest(), mode, prompt, summary);
+        return new GameSnapshot(CharacterCard.BuildAll(World), SafeList(), SafeLatest(), mode, prompt, summary, LoadServerCatalog());
+    }
+
+    /// <summary>The saved catalog of the server's characters; it is read from the disk only when it may have changed.</summary>
+    private IReadOnlyList<ServerCharacterCard> LoadServerCatalog()
+    {
+        if (_catalogStore is null)
+            return [];
+
+        if (!_catalogDirty)
+            return _serverCatalog;
+
+        _catalogDirty = false;
+        try
+        {
+            _serverCatalog = [.. _catalogStore.Load().Select(ServerCharacterCard.From)];
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            _serverCatalog = [];
+        }
+
+        return _serverCatalog;
     }
 
     private IReadOnlyList<string> SafeList()
